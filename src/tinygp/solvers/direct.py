@@ -1,22 +1,19 @@
-# -*- coding: utf-8 -*-
-
 from __future__ import annotations
 
 __all__ = ["DirectSolver"]
 
-from typing import Any, Optional
+from typing import Any
 
 import jax.numpy as jnp
 import numpy as np
 from jax.scipy import linalg
 
 from tinygp import kernels
-from tinygp.helpers import JAXArray, dataclass
+from tinygp.helpers import JAXArray
 from tinygp.noise import Noise
 from tinygp.solvers.solver import Solver
 
 
-@dataclass
 class DirectSolver(Solver):
     """A direct solver that uses ``jax``'s built in Cholesky factorization
 
@@ -30,15 +27,14 @@ class DirectSolver(Solver):
     covariance_value: JAXArray
     scale_tril: JAXArray
 
-    @classmethod
-    def init(
-        cls,
+    def __init__(
+        self,
         kernel: kernels.Kernel,
         X: JAXArray,
         noise: Noise,
         *,
-        covariance: Optional[Any] = None,
-    ) -> "DirectSolver":
+        covariance: Any | None = None,
+    ):
         """Build a :class:`DirectSolver` for a given kernel and coordinates
 
         Args:
@@ -49,16 +45,12 @@ class DirectSolver(Solver):
                 matrix. This should be equal to the result of calling ``kernel``
                 and adding ``diag``, but that is not checked.
         """
-        variance = kernel(X) + noise.diagonal()
+        self.X = X
+        self.variance_value = kernel(X) + noise.diagonal()
         if covariance is None:
             covariance = kernel(X, X) + noise
-        scale_tril = linalg.cholesky(covariance, lower=True)
-        return cls(
-            X=X,
-            variance_value=variance,
-            covariance_value=covariance,
-            scale_tril=scale_tril,
-        )
+        self.covariance_value = covariance
+        self.scale_tril = linalg.cholesky(covariance, lower=True)
 
     def variance(self) -> JAXArray:
         return self.variance_value
@@ -71,13 +63,9 @@ class DirectSolver(Solver):
             jnp.log(jnp.diag(self.scale_tril))
         ) + 0.5 * self.scale_tril.shape[0] * np.log(2 * np.pi)
 
-    def solve_triangular(
-        self, y: JAXArray, *, transpose: bool = False
-    ) -> JAXArray:
+    def solve_triangular(self, y: JAXArray, *, transpose: bool = False) -> JAXArray:
         if transpose:
-            return linalg.solve_triangular(
-                self.scale_tril, y, lower=True, trans=1
-            )
+            return linalg.solve_triangular(self.scale_tril, y, lower=True, trans=1)
         else:
             return linalg.solve_triangular(self.scale_tril, y, lower=True)
 
@@ -85,7 +73,7 @@ class DirectSolver(Solver):
         return jnp.einsum("ij,j...->i...", self.scale_tril, y)
 
     def condition(
-        self, kernel: kernels.Kernel, X_test: Optional[JAXArray], noise: Noise
+        self, kernel: kernels.Kernel, X_test: JAXArray | None, noise: Noise
     ) -> Any:
         """Compute the covariance matrix for a conditional GP
 

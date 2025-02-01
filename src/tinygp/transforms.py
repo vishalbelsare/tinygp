@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 In ``tinygp``, "transforms" are a powerful and relatively safe way to build
 extremely expressive kernels without resorting to writing a fully fledged custom
@@ -9,17 +8,18 @@ from __future__ import annotations
 
 __all__ = ["Transform", "Linear", "Cholesky", "Subspace"]
 
+from collections.abc import Sequence
 from functools import partial
-from typing import Any, Callable, Sequence, Union
+from typing import Any, Callable
 
+import equinox as eqx
 import jax.numpy as jnp
 from jax.scipy import linalg
 
-from tinygp.helpers import JAXArray, dataclass
+from tinygp.helpers import JAXArray
 from tinygp.kernels.base import Kernel
 
 
-@dataclass
 class Transform(Kernel):
     """Apply a transformation to the input coordinates of the kernel
 
@@ -29,14 +29,13 @@ class Transform(Kernel):
         kernel (Kernel): The kernel to use in the transformed space.
     """
 
-    transform: Callable[[Any], Any]
+    transform: Callable[[Any], Any] = eqx.field(static=True)
     kernel: Kernel
 
     def evaluate(self, X1: JAXArray, X2: JAXArray) -> JAXArray:
         return self.kernel.evaluate(self.transform(X1), self.transform(X2))
 
 
-@dataclass
 class Linear(Kernel):
     """Apply a linear transformation to the input coordinates of the kernel
 
@@ -72,7 +71,6 @@ class Linear(Kernel):
         return self.kernel.evaluate(transform(X1), transform(X2))
 
 
-@dataclass
 class Cholesky(Kernel):
     """Apply a Cholesky transformation to the input coordinates of the kernel
 
@@ -103,9 +101,7 @@ class Cholesky(Kernel):
         if jnp.ndim(self.factor) < 2:
             transform = partial(jnp.multiply, 1.0 / self.factor)
         elif jnp.ndim(self.factor) == 2:
-            transform = partial(
-                linalg.solve_triangular, self.factor, lower=True
-            )
+            transform = partial(linalg.solve_triangular, self.factor, lower=True)
         else:
             raise ValueError("'scale' must be 0-, 1-, or 2-dimensional")
         return self.kernel.evaluate(transform(X1), transform(X2))
@@ -113,7 +109,7 @@ class Cholesky(Kernel):
     @classmethod
     def from_parameters(
         cls, diagonal: JAXArray, off_diagonal: JAXArray, kernel: Kernel
-    ) -> "Cholesky":
+    ) -> Cholesky:
         """Build a Cholesky transform with a sensible parameterization
 
         Args:
@@ -137,7 +133,6 @@ class Cholesky(Kernel):
         return cls(factor, kernel)
 
 
-@dataclass
 class Subspace(Kernel):
     """A kernel transform that selects a subset of the input dimensions
 
@@ -160,7 +155,7 @@ class Subspace(Kernel):
         kernel (Kernel): The kernel to use in the transformed space.
     """
 
-    axis: Union[Sequence[int], int]
+    axis: Sequence[int] | int = eqx.field(static=True)
     kernel: Kernel
 
     def evaluate(self, X1: JAXArray, X2: JAXArray) -> JAXArray:

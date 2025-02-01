@@ -1,21 +1,31 @@
-# -*- coding: utf-8 -*-
-
 from __future__ import annotations
 
 __all__ = ["Solver"]
 
-from abc import ABCMeta, abstractmethod
-from typing import Any, Optional
+from abc import abstractmethod
+from typing import Any
+
+import equinox as eqx
 
 from tinygp.helpers import JAXArray
 from tinygp.kernels.base import Kernel
 from tinygp.noise import Noise
 
 
-class Solver(metaclass=ABCMeta):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        pass
+class Solver(eqx.Module):
+    def __init__(
+        self,
+        kernel: Kernel,
+        X: JAXArray,
+        noise: Noise,
+        *,
+        covariance: Any | None = None,
+    ):
+        del kernel, X, noise, covariance
+        raise NotImplementedError
 
+    # TODO(dfm): Add a deprecation warning. This exists for backwards
+    # compatibility, but using __init__ directly is preferred.
     @classmethod
     def init(
         cls,
@@ -23,9 +33,9 @@ class Solver(metaclass=ABCMeta):
         X: JAXArray,
         noise: Noise,
         *,
-        covariance: Optional[Any] = None,
-    ) -> "Solver":
-        raise NotImplementedError
+        covariance: Any | None = None,
+    ) -> Solver:
+        return cls(kernel, X, noise, covariance=covariance)
 
     @abstractmethod
     def variance(self) -> JAXArray:
@@ -48,9 +58,7 @@ class Solver(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def solve_triangular(
-        self, y: JAXArray, *, transpose: bool = False
-    ) -> JAXArray:
+    def solve_triangular(self, y: JAXArray, *, transpose: bool = False) -> JAXArray:
         """Solve the lower triangular linear system defined by this solver
 
         If the covariance matrix is ``K = L @ L.T`` for some lower triangular
@@ -70,7 +78,5 @@ class Solver(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def condition(
-        self, kernel: Kernel, X_test: Optional[JAXArray], noise: Noise
-    ) -> Any:
+    def condition(self, kernel: Kernel, X_test: JAXArray | None, noise: Noise) -> Any:
         raise NotImplementedError

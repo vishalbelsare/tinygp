@@ -5,6 +5,80 @@ Release Notes
 
 .. towncrier release notes start
 
+tinygp 0.3.0 (2024-01-05)
+-------------------------
+
+Features
+~~~~~~~~
+
+- Added a more robust and better tested implementation of the ``CARMA`` kernel for
+  use with the ``QuasisepSolver``. (`#90 <https://github.com/dfm/tinygp/issues/90>`_)
+- Switched all base classes to `equinox.Module <https://docs.kidger.site/equinox/api/module/module/>`_ objects to simplify dataclass handling. (`#200 <https://github.com/dfm/tinygp/issues/200>`_)
+
+
+Bugfixes
+~~~~~~~~
+
+- Fixed use of `jnp.roots` and `np.roll` to make CARMA kernel jit-compliant. (`#188 <https://github.com/dfm/tinygp/issues/188>`_)
+
+
+tinygp 0.2.4 (2023-09-29)
+-------------------------
+
+Features
+~~~~~~~~
+
+- Removed `__post_init__` checks after kernel construction to avoid extraneous errors when returning kernels out of `jax.vmap`'d functions. (`#148 <https://github.com/dfm/tinygp/issues/148>`_)
+- Added Zenodo data to improve citation tracking. (`#151 <https://github.com/dfm/tinygp/issues/151>`_)
+
+
+Bugfixes
+~~~~~~~~
+
+- Fixed syntax for `vmap` of `flax` modules in `transforms` tutorial. (`#159 <https://github.com/dfm/tinygp/issues/159>`_)
+
+
+Improved Documentation
+~~~~~~~~~~~~~~~~~~~~~~
+
+- Fixed incorrect definition of "spectral mixture kernel" in the custom kernels
+  tutorial. (`#143 <https://github.com/dfm/tinygp/issues/143>`_)
+- Unpinned the docs theme version to fix release compatibility with recent
+  versions of setuptools. (`#153 <https://github.com/dfm/tinygp/issues/153>`_)
+- Added past contributor metadata to `.zenodo.json`. (`#154 <https://github.com/dfm/tinygp/issues/154>`_)
+- Clarified in documentation that sigma argument is optional in quasisep kernels. (`#176 <https://github.com/dfm/tinygp/issues/176>`_)
+
+
+Misc
+~~~~
+
+- `#184 <https://github.com/dfm/tinygp/issues/184>`_
+
+
+tinygp 0.2.3 (2022-10-31)
+-------------------------
+
+Features
+~~~~~~~~
+
+- Removed deprecation warning from ``predict`` method and wrapped it in a
+  ``jax.jit`` in order to support interactive use. (`#120 <https://github.com/dfm/tinygp/issues/120>`_)
+- Added check for sorted input coordinates when using the ``QuasisepSolver``;
+  a ``ValueError`` is thrown if they are not. (`#123 <https://github.com/dfm/tinygp/issues/123>`_)
+
+
+Bugfixes
+~~~~~~~~
+
+- Fixed incorrect definition of ``observation_model`` for ``Celerite`` kernel. (`#88 <https://github.com/dfm/tinygp/issues/88>`_)
+- Fixed ``FutureWarning`` by updating ``tree_map`` to ``tree_util.tree_map``. (`#114 <https://github.com/dfm/tinygp/issues/114>`_)
+- Fixed issue when tree structure and shape of ``X_test`` input to ``condition``
+  was incompatible with the initial input. (`#119 <https://github.com/dfm/tinygp/issues/119>`_)
+- Fixed bug where the gradient of the L2 distance would return NaN when the
+  distance was zero. (`#121 <https://github.com/dfm/tinygp/issues/121>`_)
+- Fixed behavior of DotProduct kernel on scalar inputs. (`#124 <https://github.com/dfm/tinygp/issues/124>`_)
+
+
 tinygp 0.2.2 (2022-04-20)
 -------------------------
 
